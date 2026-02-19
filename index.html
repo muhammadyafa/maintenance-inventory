@@ -3,142 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Control Pro - Maintenance</title>
+    <title>Sistem Kontrol Sparepart Terpadu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
+        @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect } = React;
 
         const INITIAL_DATA = [
-            { id: 'MEC-001', name: 'Ball Bearing 6000 ZZ', category: 'Mechanical', stock: 21, minStock: 58, unit: 'Pcs' },
-            { id: 'MEC-002', name: 'Ball Bearing 6001 ZZ', category: 'Mechanical', stock: 45, minStock: 14, unit: 'Pcs' },
-            { id: 'ELC-001', name: 'Inductive Proximity Sensor', category: 'Electrical', stock: 7, minStock: 15, unit: 'Pcs' }
+            { id: 'MEC-001-M1', name: 'Ball Bearing 6000 ZZ', awal: 13, in: 0, out: 0, stock: 13, min: 20 },
+            { id: 'MEC-002-M1', name: 'Ball Bearing 6001 ZZ', awal: 24, in: 0, out: 0, stock: 24, min: 10 },
+            { id: 'ELC-001-E1', name: 'Proximity Sensor M12', awal: 15, in: 0, out: 0, stock: 15, min: 5 }
         ];
 
         function App() {
-            const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [inventory, setInventory] = useState(() => {
-                const saved = localStorage.getItem('maint_db');
+                const saved = localStorage.getItem('maint_db_v4');
                 return saved ? JSON.parse(saved) : INITIAL_DATA;
             });
-            const [search, setSearch] = useState("");
-            const [selectedItem, setSelectedItem] = useState(null); // Untuk Modal Form
-            const [inputQty, setInputQty] = useState("");
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [modalType, setModalType] = useState('IN'); // 'IN' or 'OUT'
+            const [selectedId, setSelectedId] = useState("");
+            const [qty, setQty] = useState("");
 
             useEffect(() => {
-                localStorage.setItem('maint_db', JSON.stringify(inventory));
+                localStorage.setItem('maint_db_v4', JSON.stringify(inventory));
             }, [inventory]);
 
-            const handleUpdateStock = (type) => {
-                const qty = parseInt(inputQty);
-                if (isNaN(qty) || qty <= 0) return alert("Masukkan jumlah yang valid!");
-                
+            const handleTransaction = () => {
+                const amount = parseInt(qty);
+                if (!selectedId || isNaN(amount) || amount <= 0) return alert("Data tidak valid!");
+
                 setInventory(prev => prev.map(item => {
-                    if (item.id === selectedItem.id) {
-                        const newStock = type === 'in' ? item.stock + qty : Math.max(0, item.stock - qty);
-                        return { ...item, stock: newStock };
+                    if (item.id === selectedId) {
+                        const newIn = modalType === 'IN' ? item.in + amount : item.in;
+                        const newOut = modalType === 'OUT' ? item.out + amount : item.out;
+                        return { 
+                            ...item, 
+                            in: newIn, 
+                            out: newOut, 
+                            stock: item.awal + newIn - newOut 
+                        };
                     }
                     return item;
                 }));
-                setSelectedItem(null);
-                setInputQty("");
+                setIsModalOpen(false);
+                setQty("");
             };
 
-            const exportToCSV = () => {
-                let csvContent = "data:text/csv;charset=utf-8,ID,Part Name,Category,Stock,Min Stock,Unit\n" 
-                    + inventory.map(e => `${e.id},${e.name},${e.category},${e.stock},${e.minStock},${e.unit}`).join("\n");
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "Inventory_Report.csv");
-                document.body.appendChild(link);
-                link.click();
+            const exportCSV = () => {
+                let csv = "ID,Part Name,Awal,In,Out,Akhir,Status\n";
+                inventory.forEach(i => {
+                    const status = i.stock <= i.min ? "REORDER" : "AMAN";
+                    csv += `${i.id},${i.name},${i.awal},${i.in},${i.out},${i.stock},${status}\n`;
+                });
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Laporan_Stok_Maintenance.csv';
+                a.click();
             };
-
-            if (!isLoggedIn) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] p-4">
-                        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md">
-                            <h1 className="text-3xl font-black text-slate-900 mb-6 text-center">Maintenance System</h1>
-                            <input type="password" placeholder="Password" className="w-full p-4 border rounded-2xl mb-4 outline-none focus:ring-2 focus:ring-blue-500" onKeyDown={(e) => e.key === 'Enter' && e.target.value === 'MAINTENANCE2026' && setIsLoggedIn(true)} />
-                            <button onClick={() => setIsLoggedIn(true)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-blue-600 transition-all">Login</button>
-                        </div>
-                    </div>
-                );
-            }
 
             return (
-                <div className="min-h-screen pb-20">
-                    <nav className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-40 px-6 py-4">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center">
-                            <h1 className="text-xl font-black text-slate-900">STOCK CONTROL <span className="text-blue-600">PRO</span></h1>
+                <div className="min-h-screen p-4 md:p-8">
+                    {/* Header Sesuai Screenshot */}
+                    <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                        <div>
+                            <h1 className="text-2xl font-extrabold text-slate-800">Inventory & Stock Control</h1>
+                            <p className="text-emerald-500 text-xs font-bold uppercase tracking-widest">● Operational Secure Feed</p>
+                        </div>
+                        <div className="flex gap-3 no-print">
+                            <button onClick={() => { setModalType('IN'); setIsModalOpen(true); }} className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all active:scale-95">STOK IN</button>
+                            <button onClick={() => { setModalType('OUT'); setIsModalOpen(true); }} className="bg-rose-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all active:scale-95">STOK OUT</button>
+                        </div>
+                    </div>
+
+                    {/* Main Card */}
+                    <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <div className="flex gap-4">
-                                <button onClick={exportToCSV} className="bg-green-50 text-green-700 px-4 py-2 rounded-xl font-bold text-xs border border-green-200 hover:bg-green-600 hover:text-white transition-all">EXPORT EXCEL</button>
-                                <button onClick={() => window.print()} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-xl font-bold text-xs border border-slate-200">PRINT PDF</button>
+                                <button className="text-blue-600 font-bold text-sm border-b-2 border-blue-600 pb-1">DATABASE PART</button>
+                                <button onClick={exportCSV} className="text-slate-400 font-bold text-sm hover:text-slate-600">LOG TRANSAKSI (CSV)</button>
                             </div>
-                        </div>
-                    </nav>
-
-                    <main className="max-w-7xl mx-auto px-4 mt-8">
-                        <div className="bg-white rounded-[2rem] border p-8 mb-8 shadow-sm">
-                            <input type="text" placeholder="Cari sparepart..." className="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500" onChange={(e)=>setSearch(e.target.value)} />
+                            <button onClick={() => window.print()} className="no-print text-slate-400 hover:text-slate-600"><span className="text-xs font-bold">PRINT PDF</span></button>
                         </div>
 
-                        <div className="bg-white rounded-[2rem] border overflow-hidden shadow-sm">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50 border-b">
-                                    <tr>
-                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase">Description</th>
-                                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase text-center">Current Stock</th>
-                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase text-center">Action</th>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-[#1e293b] text-white">
+                                        <th className="p-4 text-[10px] font-bold uppercase tracking-widest">ID & Nama Part</th>
+                                        <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-center">Awal</th>
+                                        <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-center text-emerald-400">In</th>
+                                        <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-center text-rose-400">Out</th>
+                                        <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-center bg-indigo-900">Akhir</th>
+                                        <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-center">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y">
-                                    {inventory.filter(i => i.name.toLowerCase().includes(search.toLowerCase())).map(item => (
-                                        <tr key={item.id} className="hover:bg-slate-50/50 transition-all">
-                                            <td className="px-8 py-6">
-                                                <p className="font-bold text-slate-900">{item.name}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{item.id}</p>
+                                <tbody className="divide-y divide-slate-100">
+                                    {inventory.map(item => (
+                                        <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="p-4">
+                                                <p className="text-[10px] font-bold text-blue-500 mb-1">{item.id}</p>
+                                                <p className="font-bold text-slate-800">{item.name}</p>
                                             </td>
-                                            <td className="px-6 py-6 text-center">
-                                                <p className={`text-xl font-black ${item.stock <= item.minStock ? 'text-red-600' : 'text-slate-900'}`}>{item.stock} <span className="text-xs font-normal text-slate-400">{item.unit}</span></p>
-                                                {item.stock <= item.minStock && <span className="text-[10px] font-black text-red-500 italic">! REORDER</span>}
-                                            </td>
-                                            <td className="px-8 py-6 text-center">
-                                                <button onClick={() => setSelectedItem(item)} className="bg-slate-900 text-white px-6 py-2 rounded-xl font-bold text-xs hover:bg-blue-600 transition-all">UPDATE STOCK</button>
+                                            <td className="p-4 text-center text-slate-400 font-bold">{item.awal}</td>
+                                            <td className="p-4 text-center text-emerald-600 font-black">{item.in}</td>
+                                            <td className="p-4 text-center text-rose-600 font-black">{item.out}</td>
+                                            <td className="p-4 text-center font-black bg-indigo-50/30 text-indigo-700 text-lg">{item.stock}</td>
+                                            <td className="p-4 text-center">
+                                                {item.stock <= item.min ? 
+                                                    <span className="text-[10px] font-black text-rose-500 bg-rose-50 px-2 py-1 rounded border border-rose-100">REORDER</span> : 
+                                                    <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">AMAN</span>
+                                                }
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-                    </main>
+                    </div>
 
-                    {/* MODAL FORM INPUT */}
-                    {selectedItem && (
-                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl animate-in zoom-in duration-200">
-                                <h2 className="text-xl font-black text-slate-900 mb-1">Update Stock</h2>
-                                <p className="text-xs text-slate-500 mb-6 font-bold uppercase">{selectedItem.name}</p>
+                    {/* Modal Input Sesuai Kebutuhan */}
+                    {isModalOpen && (
+                        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl scale-in-center">
+                                <h2 className={`text-2xl font-black mb-6 ${modalType === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>STOK {modalType}</h2>
                                 
-                                <label className="block text-xs font-black text-slate-400 mb-2 uppercase">Jumlah Barang</label>
-                                <input autoFocus type="number" className="w-full p-4 bg-slate-100 border-none rounded-2xl mb-6 text-xl font-bold outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" value={inputQty} onChange={(e)=>setInputQty(e.target.value)} />
-                                
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={() => handleUpdateStock('in')} className="bg-green-600 text-white py-4 rounded-2xl font-bold hover:bg-green-700 shadow-lg shadow-green-100 uppercase text-xs">Stock Masuk</button>
-                                    <button onClick={() => handleUpdateStock('out')} className="bg-red-600 text-white py-4 rounded-2xl font-bold hover:bg-red-700 shadow-lg shadow-red-100 uppercase text-xs">Stock Keluar</button>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase mb-2">Pilih Sparepart</label>
+                                <select className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl mb-4 font-bold outline-none focus:ring-2 focus:ring-blue-500" value={selectedId} onChange={(e)=>setSelectedId(e.target.value)}>
+                                    <option value="">-- Pilih Barang --</option>
+                                    {inventory.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                                </select>
+
+                                <label className="block text-[10px] font-black text-slate-400 uppercase mb-2">Jumlah (Qty)</label>
+                                <input type="number" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl mb-8 text-xl font-bold outline-none focus:ring-2 focus:ring-blue-500" placeholder="0" value={qty} onChange={(e)=>setQty(e.target.value)} />
+
+                                <div className="flex gap-3">
+                                    <button onClick={() => setIsModalOpen(false)} className="flex-1 py-4 text-slate-400 font-bold uppercase text-xs">Batal</button>
+                                    <button onClick={handleTransaction} className={`flex-[2] py-4 rounded-2xl text-white font-black shadow-lg uppercase text-xs ${modalType === 'IN' ? 'bg-emerald-600 shadow-emerald-100' : 'bg-rose-600 shadow-rose-100'}`}>Konfirmasi {modalType}</button>
                                 </div>
-                                <button onClick={() => setSelectedItem(null)} className="w-full mt-4 text-slate-400 font-bold text-[10px] uppercase hover:text-slate-600">Batal</button>
                             </div>
                         </div>
                     )}
