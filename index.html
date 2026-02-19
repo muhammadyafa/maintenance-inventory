@@ -3,94 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maintenance Inventory Control</title>
+    <title>Maintenance Stock Control - Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    </style>
 </head>
-<body class="bg-slate-100 font-sans">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useMemo } = React;
 
         const INITIAL_DATA = [
-            { id: 'M-001', name: 'Ball Bearing 6205', cat: 'Mechanical', stock: 45, min: 10, unit: 'pcs' },
-            { id: 'M-002', name: 'V-Belt B-52', cat: 'Mechanical', stock: 5, min: 8, unit: 'pcs' },
-            { id: 'E-101', name: 'Proximity Sensor PNP', cat: 'Electrical', stock: 12, min: 5, unit: 'unit' },
-            { id: 'E-105', name: 'Contactor 220V 12A', cat: 'Electrical', stock: 3, min: 10, unit: 'pcs' }
+            { id: 'MEC-001', name: 'Ball Bearing 6000 ZZ', category: 'Mechanical', stock: 21, minStock: 58, unit: 'Pcs' },
+            { id: 'MEC-002', name: 'Ball Bearing 6001 ZZ', category: 'Mechanical', stock: 45, minStock: 14, unit: 'Pcs' },
+            { id: 'ELC-001', name: 'Inductive Proximity Sensor', category: 'Electrical', stock: 7, minStock: 15, unit: 'Pcs' },
+            { id: 'CON-064', name: 'Kunci Pas Ring 14mm', category: 'Tools', stock: 12, minStock: 29, unit: 'Pcs' },
+            { id: 'CON-065', name: 'Kunci Pas Ring 17mm', category: 'Tools', stock: 4, minStock: 21, unit: 'Pcs' }
         ];
 
         function App() {
             const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [inventory, setInventory] = useState(INITIAL_DATA);
+            const [search, setSearch] = useState("");
+            const [filter, setFilter] = useState("all");
             const [pass, setPass] = useState("");
+
+            const filteredItems = useMemo(() => {
+                return inventory.filter(item => {
+                    const matchSearch = item.name.toLowerCase().includes(search.toLowerCase()) || item.id.toLowerCase().includes(search.toLowerCase());
+                    const matchFilter = filter === "all" ? true : item.stock <= item.minStock;
+                    return matchSearch && matchFilter;
+                });
+            }, [inventory, search, filter]);
 
             if (!isLoggedIn) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
-                        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-                            <h1 className="text-2xl font-bold text-center mb-6">Inventory Login</h1>
-                            <input type="password" placeholder="Password Admin" className="w-full p-3 border rounded-lg mb-4" onChange={(e)=>setPass(e.target.value)} />
-                            <button onClick={()=> pass === "MAINTENANCE2026" ? setIsLoggedIn(true) : alert("Salah!")} className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Login</button>
+                    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] p-4">
+                        <div className="bg-white p-10 rounded-[2rem] shadow-2xl w-full max-w-md border border-slate-800">
+                            <h1 className="text-3xl font-extrabold text-slate-900 mb-2 text-center">Stock Control</h1>
+                            <p className="text-slate-400 text-center mb-8 text-sm font-medium">Maintenance Engineering Login</p>
+                            <input type="password" placeholder="Admin Password" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl mb-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all" onChange={(e)=>setPass(e.target.value)} />
+                            <button onClick={()=> pass === "MAINTENANCE2026" ? setIsLoggedIn(true) : alert("Password Salah!")} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-lg">Access Dashboard</button>
                         </div>
                     </div>
                 );
             }
 
             return (
-                <div className="p-4 md:p-8 max-w-6xl mx-auto">
-                    <header className="flex justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm">
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-800">Stock Control Dashboard</h1>
-                            <p className="text-sm text-slate-500 font-medium">Factory Maintenance Div.</p>
+                <div className="min-h-screen pb-10">
+                    <nav className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-10 shadow-sm">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-slate-900 text-white p-1.5 rounded-lg font-black text-xl">SC</div>
+                                <div>
+                                    <h1 className="text-lg font-extrabold text-slate-900 leading-none uppercase tracking-tight">Stock Control</h1>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Factory Maintenance Div.</p>
+                                </div>
+                            </div>
+                            <button onClick={()=>setIsLoggedIn(false)} className="text-slate-400 hover:text-red-500 font-bold text-xs uppercase tracking-widest transition-colors">Sign Out</button>
                         </div>
-                        <button onClick={()=>setIsLoggedIn(false)} className="text-red-500 font-bold px-4 py-2 border border-red-100 rounded-xl hover:bg-red-50">Logout</button>
-                    </header>
+                    </nav>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                        <div className="bg-white p-6 rounded-2xl border-l-4 border-blue-500 shadow-sm">
-                            <p className="text-xs font-bold text-slate-400 uppercase">Total Items</p>
-                            <p className="text-3xl font-black text-slate-800">{inventory.length}</p>
+                    <main className="max-w-7xl mx-auto px-4 mt-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total SKU</p>
+                                <h3 className="text-4xl font-black text-slate-900">{inventory.length}</h3>
+                            </div>
+                            <div className="bg-white p-6 rounded-[2rem] border-l-8 border-red-500 shadow-sm">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-red-500">Items to Reorder</p>
+                                <h3 className="text-4xl font-black text-red-600">{inventory.filter(i => i.stock <= i.minStock).length}</h3>
+                            </div>
+                            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-green-500">Stock Secure</p>
+                                <h3 className="text-4xl font-black text-green-600">{inventory.filter(i => i.stock > i.minStock).length}</h3>
+                            </div>
                         </div>
-                        <div className="bg-white p-6 rounded-2xl border-l-4 border-red-500 shadow-sm">
-                            <p className="text-xs font-bold text-slate-400 uppercase">Critical Stock</p>
-                            <p className="text-3xl font-black text-red-600">{inventory.filter(i => i.stock <= i.min).length}</p>
-                        </div>
-                    </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-50 border-b">
-                                <tr>
-                                    <th className="p-4 text-xs font-bold text-slate-500 uppercase">Item Description</th>
-                                    <th className="p-4 text-xs font-bold text-slate-500 uppercase">Stock</th>
-                                    <th className="p-4 text-xs font-bold text-slate-500 uppercase text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {inventory.map(item => (
-                                    <tr key={item.id} className="hover:bg-slate-50">
-                                        <td className="p-4">
-                                            <p className="font-bold text-slate-800">{item.name}</p>
-                                            <p className="text-[10px] text-blue-500 font-bold">{item.id} | {item.cat}</p>
-                                        </td>
-                                        <td className="p-4">
-                                            <span className={`text-lg font-black ${item.stock <= item.min ? 'text-red-600' : 'text-slate-800'}`}>{item.stock}</span>
-                                            <span className="text-[10px] ml-1 text-slate-400 font-bold uppercase">{item.unit}</span>
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            <div className="flex justify-center gap-2">
-                                                <button onClick={() => setInventory(prev => prev.map(i => i.id === item.id ? {...i, stock: i.stock + 1} : i))} className="bg-slate-800 text-white w-10 h-10 rounded-xl font-bold">+</button>
-                                                <button onClick={() => setInventory(prev => prev.map(i => i.id === item.id ? {...i, stock: Math.max(0, i.stock - 1)} : i))} className="bg-slate-200 text-slate-600 w-10 h-10 rounded-xl font-bold">-</button>
-                                            </div>
-                                        </td>
+                        <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
+                            <div className="relative flex-1 w-full">
+                                <input type="text" placeholder="Search by Part Name or ID..." className="w-full pl-6 pr-4 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all" value={search} onChange={(e)=>setSearch(e.target.value)} />
+                            </div>
+                            <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                                <button onClick={()=>setFilter("all")} className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filter==='all' ? 'bg-slate-900 text-white' : 'text-slate-400'}`}>All Items</button>
+                                <button onClick={()=>setFilter("reorder")} className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${filter==='reorder' ? 'bg-red-600 text-white' : 'text-slate-400'}`}>Reorder</button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 border-b border-slate-100">
+                                    <tr>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Part Info</th>
+                                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Stock Level</th>
+                                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {filteredItems.map(item => (
+                                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                                            <td className="px-8 py-6">
+                                                <p className="font-extrabold text-slate-900 text-base">{item.name}</p>
+                                                <p className="text-[10px] font-bold text-blue-500 uppercase tracking-tighter mt-1">{item.id} • {item.category}</p>
+                                            </td>
+                                            <td className="px-6 py-6 text-center">
+                                                <p className={`text-xl font-black ${item.stock <= item.minStock ? 'text-red-600' : 'text-slate-900'}`}>{item.stock} <span className="text-[10px] font-normal text-slate-400 lowercase">{item.unit}</span></p>
+                                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">Min: {item.minStock}</p>
+                                            </td>
+                                            <td className="px-6 py-6 text-center">
+                                                {item.stock <= item.minStock ? 
+                                                    <span className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-[10px] font-black border border-red-100 italic tracking-widest">LOW STOCK</span> : 
+                                                    <span className="bg-green-50 text-green-600 px-3 py-1.5 rounded-lg text-[10px] font-black border border-green-100 italic tracking-widest">SECURE</span>
+                                                }
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex justify-center gap-2">
+                                                    <button onClick={() => setInventory(prev => prev.map(i => i.id === item.id ? {...i, stock: i.stock + 1} : i))} className="bg-slate-900 text-white w-10 h-10 rounded-xl font-bold hover:bg-blue-600 transition-all">+</button>
+                                                    <button onClick={() => setInventory(prev => prev.map(i => i.id === item.id ? {...i, stock: Math.max(0, i.stock - 1)} : i))} className="bg-slate-100 text-slate-500 w-10 h-10 rounded-xl font-bold hover:bg-slate-200 transition-all">-</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </main>
                 </div>
             );
         }
