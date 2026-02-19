@@ -1,44 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maintenance Inventory Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              industrial: {
-                50: '#f8fafc',
-                100: '#f1f5f9',
-                200: '#e2e8f0',
-                300: '#cbd5e1',
-                400: '#94a3b8',
-                500: '#64748b',
-                600: '#475569',
-                700: '#334155',
-                800: '#1e293b',
-                900: '#0f172a',
-              }
-            }
-          }
-        }
-      }
-    </script>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.574.0"
-  }
-}
-</script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-  <body class="bg-industrial-50 text-industrial-900 font-sans antialiased">
+<body class="bg-[#f8fafc] text-[#0f172a]">
     <div id="root"></div>
-  </body>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        const MASTER_PASSWORD = "MAINTENANCE2026";
+        
+        // DATA SESUAI CSV KAMU
+        const INITIAL_DATA = [
+            { id: 'MEC-001-M1', name: 'Ball Bearing 6000 ZZ', category: 'Mechanical', stock: 21, minStock: 58, unit: 'Pcs' },
+            { id: 'MEC-002-M1', name: 'Ball Bearing 6001 ZZ', category: 'Mechanical', stock: 45, minStock: 14, unit: 'Pcs' },
+            { id: 'ELC-001-E1', name: 'Inductive Proximity Sensor M12', category: 'Electrical', stock: 7, minStock: 15, unit: 'Pcs' },
+            { id: 'CON-064-T1', name: 'Kunci Pas Ring 14mm', category: 'Tools', stock: 12, minStock: 29, unit: 'Pcs' },
+            { id: 'CON-065-T1', name: 'Kunci Pas Ring 17mm', category: 'Tools', stock: 4, minStock: 21, unit: 'Pcs' }
+        ];
+
+        function App() {
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [pass, setPass] = useState("");
+            const [inventory, setInventory] = useState(INITIAL_DATA);
+
+            if (!isLoggedIn) {
+                return (
+                    <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
+                        <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+                            <div className="flex justify-center mb-6">
+                                <div className="bg-blue-100 p-3 rounded-full">
+                                    <i data-lucide="settings" className="text-blue-600 w-8 h-8"></i>
+                                </div>
+                            </div>
+                            <h1 className="text-2xl font-bold text-center mb-2">Inventory System</h1>
+                            <p className="text-slate-500 text-center mb-8 text-sm">Maintenance & Engineering Department</p>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                if(pass === MASTER_PASSWORD) setIsLoggedIn(true);
+                                else alert("Password Salah!");
+                            }}>
+                                <label className="block text-sm font-semibold mb-2">Admin Password</label>
+                                <input 
+                                    type="password" 
+                                    className="w-full p-3 border border-slate-200 rounded-lg mb-6 focus:ring-2 focus:ring-blue-500 outline-none"
+                                    placeholder="••••••••"
+                                    onChange={(e) => setPass(e.target.value)}
+                                />
+                                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
+                                    Sign In
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    <header className="flex justify-between items-center mb-10 max-w-6xl mx-auto">
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-800">Sparepart Database</h2>
+                            <p className="text-slate-500 text-sm">Maintenance Inventory Control</p>
+                        </div>
+                        <button onClick={() => setIsLoggedIn(false)} className="bg-white border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50 hover:text-red-600 transition">
+                            Logout
+                        </button>
+                    </header>
+
+                    <main className="max-w-6xl mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                                <p className="text-xs font-bold text-slate-400 uppercase mb-2">Total Items</p>
+                                <p className="text-3xl font-bold text-slate-800">{inventory.length}</p>
+                            </div>
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-orange-500">
+                                <p className="text-xs font-bold text-slate-400 uppercase mb-2">Need Reorder</p>
+                                <p className="text-3xl font-bold text-orange-600">{inventory.filter(i => i.stock <= i.minStock).length}</p>
+                            </div>
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-green-500">
+                                <p className="text-xs font-bold text-slate-400 uppercase mb-2">Stock Secure</p>
+                                <p className="text-3xl font-bold text-green-600">{inventory.filter(i => i.stock > i.minStock).length}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-50 border-b border-slate-100">
+                                        <tr>
+                                            <th className="p-4 text-xs font-bold text-slate-500 uppercase">Part ID</th>
+                                            <th className="p-4 text-xs font-bold text-slate-500 uppercase">Description</th>
+                                            <th className="p-4 text-xs font-bold text-slate-500 uppercase">Stock</th>
+                                            <th className="p-4 text-xs font-bold text-slate-500 uppercase text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {inventory.map(item => (
+                                            <tr key={item.id} className="hover:bg-slate-50 transition">
+                                                <td className="p-4 font-mono text-xs text-slate-400">{item.id}</td>
+                                                <td className="p-4">
+                                                    <p className="font-bold text-slate-700">{item.name}</p>
+                                                    <p className="text-[10px] text-blue-500 font-bold uppercase">{item.category}</p>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="flex flex-col">
+                                                        <span className={`text-lg font-bold ${item.stock <= item.minStock ? 'text-red-600' : 'text-slate-800'}`}>
+                                                            {item.stock} <span className="text-xs font-normal text-slate-400">{item.unit}</span>
+                                                        </span>
+                                                        {item.stock <= item.minStock && (
+                                                            <span className="text-[10px] font-bold text-red-500 flex items-center gap-1 mt-1">
+                                                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span> LOW STOCK
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="flex justify-center gap-2">
+                                                        <button 
+                                                            onClick={() => setInventory(prev => prev.map(i => i.id === item.id ? {...i, stock: i.stock + 1} : i))}
+                                                            className="bg-slate-800 text-white w-8 h-8 rounded-lg hover:bg-blue-600 transition flex items-center justify-center"
+                                                        >+</button>
+                                                        <button 
+                                                            onClick={() => setInventory(prev => prev.map(i => i.id === item.id ? {...i, stock: Math.max(0, i.stock - 1)} : i))}
+                                                            className="bg-slate-100 text-slate-600 w-8 h-8 rounded-lg hover:bg-slate-200 transition flex items-center justify-center"
+                                                        >-</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+        setTimeout(() => lucide.createIcons(), 500);
+    </script>
+</body>
 </html>
